@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Search</title>
+</head>
+<body>
+  <h1>Log Search</h1>
+  <div>
+    <input type="text" id="searchInput" placeholder="Enter search query...">
+    <select id="levelFilter">
+      <option value="">Filter by Level</option>
+      <option value="info">Info</option>
+      <option value="error">Error</option>
+      <option value="warning">Warning</option>
+      <!-- Add more log levels as needed -->
+    </select>
+    <input type="datetime-local" id="timestampFilter" placeholder="Filter by Timestamp">
+    <input type="text" id="sourceFilter" placeholder="Filter by Source">
+    <button onclick="searchLogs()">Search</button>
+  </div>
+  <div id="searchResults"></div>
+
+  <script>
+    async function searchLogs() {
+      const searchInput = document.getElementById('searchInput').value;
+      const levelFilter = document.getElementById('levelFilter').value;
+      const timestampFilter = document.getElementById('timestampFilter').value;
+      const sourceFilter = document.getElementById('sourceFilter').value;
+
+      const queryParams = [];
+      if (searchInput) queryParams.push(`log_string=${searchInput}`);
+      if (levelFilter) queryParams.push(`level=${levelFilter}`);
+      if (timestampFilter) queryParams.push(`timestamp=${timestampFilter}`);
+      if (sourceFilter) queryParams.push(`source=${sourceFilter}`);
+
+      const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : ''; // log_string=database error
+
+      // Ensure that the URL matches the backend server address
+      const url = `http://localhost:3000/search${queryString}`;// http://localhost:3000/search?log_string=database error
+
+      try {
+        const response = await fetch(url);
+        const searchResults = await response.json();
+        displaySearchResults(searchResults);
+      } catch (error) {
+        console.error('Error fetching search results:', error);
+        // Handle error (e.g., display error message to user)
+      }
+    }
+
+    function displaySearchResults(results) {
+      const searchResultsDiv = document.getElementById('searchResults');
+      searchResultsDiv.innerHTML = '';
+
+      if (results.length === 0) {
+        searchResultsDiv.textContent = 'No results found.';
+      } else {
+        results.forEach(log => {
+          const logElement = document.createElement('div');
+          logElement.textContent = `[${log.timestamp}] [${log.level}] ${log.log_string} (${log.metadata.source})`;
+          searchResultsDiv.appendChild(logElement);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
